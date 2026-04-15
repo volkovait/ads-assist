@@ -6,6 +6,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
+import { apiUrl } from './apiBase';
 
 type TabId = 'copy' | 'image';
 
@@ -130,7 +131,7 @@ function CopyChatPanel({ userName }: { userName: string }) {
     const payload = [...messages, userMsg].map(({ role, content }) => ({ role, content }));
 
     try {
-      const res = await fetch('/api/copy/chat', {
+      const res = await fetch(apiUrl('/api/copy/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userName: userName.trim(), messages: payload }),
@@ -264,7 +265,7 @@ function ImageBannerPanel({ userName }: { userName: string }) {
     setImageUrl(null);
 
     try {
-      const res = await fetch('/api/banner/generate', {
+      const res = await fetch(apiUrl('/api/banner/generate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userName: userName.trim(), keyMessage: km, targetAudience: ta }),
@@ -345,7 +346,7 @@ function ImageBannerPanel({ userName }: { userName: string }) {
       <section style={styles.preview}>
         <h2 style={styles.previewHeading}>Превью</h2>
         {imageUrl ? (
-          <img src={imageUrl} alt="Сгенерированный баннер" style={styles.previewImg} />
+          <img src={apiUrl(imageUrl)} alt="Сгенерированный баннер" style={styles.previewImg} />
         ) : (
           <div style={styles.previewPlaceholder}>{loading ? 'Генерируем…' : 'Здесь появится баннер'}</div>
         )}

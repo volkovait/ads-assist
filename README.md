@@ -48,6 +48,8 @@
 
    Откройте в браузере адрес, который выведет Vite (обычно `http://localhost:5173`).
 
+   Локально **не нужен** `VITE_PUBLIC_API_BASE_URL`: запросы идут на тот же origin, Vite проксирует `/api` и `/generated` на `http://127.0.0.1:3001`.
+
 4. **Продакшен-сборка** — клиент в `client/dist`, сервер в `server/dist`; Express отдаёт API, статику `generated/` и SPA при `NODE_ENV=production`:
 
    ```bash
@@ -68,6 +70,17 @@
 | `PORT` | Порт Express (по умолчанию `3001`). |
 | `TELEGRAM_BOT_TOKEN` | Токен бота. |
 | `TELEGRAM_CHAT_ID` | ID чата для отправки результатов. |
+| `CORS_ORIGINS` | Необязательно: дополнительные разрешённые origin для CORS (через запятую). По умолчанию уже разрешены прод-фронт [ads-assist-client.vercel.app](https://ads-assist-client.vercel.app) и типичные `localhost` / `127.0.0.1` для Vite. |
+
+### Клиент (Vite): отдельный хост API
+
+Если фронт собирается для статического хостинга (например только приложение на Vercel), а API крутится на другом URL, при сборке клиента задайте:
+
+| Переменная | Описание |
+|------------|----------|
+| `VITE_PUBLIC_API_BASE_URL` | Абсолютный URL бэкенда **без** завершающего `/` (например `https://api.myapp.com`). Пустое значение — относительные пути и прокси в dev. |
+
+Переменную указывают в `client/.env.local` или в настройках CI / Vercel → Environment Variables для шага `npm run build -w client`.
 
 Ключи и токены не коммитьте; держите их только в `.env` (файл в `.gitignore`).
 
@@ -97,6 +110,7 @@ banner-practise/
 │   │   ├── telegram.ts     # sendPhoto, sendMessage
 │   │   ├── routes/banner.ts# /api/copy/chat, /api/banner/generate
 │   │   ├── loadEnv.ts      # загрузка .env из корня монорепо
+│   │   ├── corsConfig.ts   # CORS: Vercel-фронт + localhost в dev
 │   │   └── index.ts        # Express, статика, SPA в production
 │   └── generated/          # сохранённые JPG (не коммитить содержимое)
 ├── example/                # референс NestJS + другой провайдер (исторический)
