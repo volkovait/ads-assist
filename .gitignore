@@ -7,3 +7,5 @@ server/generated/*
 !server/generated/.gitkeep
 public/*
 !public/.gitkeep
+.vercel
+.env*.local

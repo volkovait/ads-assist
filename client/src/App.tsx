@@ -6,7 +6,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
-import { apiUrl } from './apiBase';
+import { generatedAssetUrl, postBannerGenerate, postCopyChat } from './api';
 
 type TabId = 'copy' | 'image';
 
@@ -14,28 +14,6 @@ type ChatBubble = { id: string; role: 'user' | 'assistant'; content: string };
 
 const WELCOME_TEXT =
   'Привет! Здесь рождаются самые креативные и поражающие воображение рекламные тексты. Попробуй сломать меня темами про геев и наркоту! Спорим, ничего не выйдет ;)';
-
-interface CopyChatResponse {
-  reply: string;
-  telegramSent: boolean;
-}
-
-interface BannerResponse {
-  imageUrl: string;
-  telegramSent: boolean;
-}
-
-interface ErrorBody {
-  error?: string;
-}
-
-function getErrorMessage(data: unknown, fallback: string): string {
-  if (typeof data === 'object' && data !== null && 'error' in data) {
-    const err = (data as ErrorBody).error;
-    if (typeof err === 'string' && err.trim()) return err;
-  }
-  return fallback;
-}
 
 function newId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -131,24 +109,7 @@ function CopyChatPanel({ userName }: { userName: string }) {
     const payload = [...messages, userMsg].map(({ role, content }) => ({ role, content }));
 
     try {
-      const res = await fetch(apiUrl('/api/copy/chat'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userName: userName.trim(), messages: payload }),
-      });
-      const data: unknown = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(getErrorMessage(data, `Ошибка ${res.status}`));
-      }
-      if (
-        typeof data !== 'object' ||
-        data === null ||
-        !('reply' in data) ||
-        typeof (data as CopyChatResponse).reply !== 'string'
-      ) {
-        throw new Error('Некорректный ответ сервера');
-      }
-      const body = data as CopyChatResponse;
+      const body = await postCopyChat(userName.trim(), payload);
       setMessages(prev => [...prev, { id: newId(), role: 'assistant', content: body.reply }]);
       setTelegramSent(typeof body.telegramSent === 'boolean' ? body.telegramSent : null);
     } catch (err) {
@@ -265,24 +226,11 @@ function ImageBannerPanel({ userName }: { userName: string }) {
     setImageUrl(null);
 
     try {
-      const res = await fetch(apiUrl('/api/banner/generate'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userName: userName.trim(), keyMessage: km, targetAudience: ta }),
+      const payload = await postBannerGenerate({
+        userName: userName.trim(),
+        keyMessage: km,
+        targetAudience: ta,
       });
-      const data: unknown = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(getErrorMessage(data, `Ошибка ${res.status}`));
-      }
-      if (
-        typeof data !== 'object' ||
-        data === null ||
-        !('imageUrl' in data) ||
-        typeof (data as BannerResponse).imageUrl !== 'string'
-      ) {
-        throw new Error('Некорректный ответ сервера');
-      }
-      const payload = data as BannerResponse;
       setImageUrl(payload.imageUrl);
       setTelegramSent(typeof payload.telegramSent === 'boolean' ? payload.telegramSent : null);
     } catch (err) {
@@ -346,7 +294,7 @@ function ImageBannerPanel({ userName }: { userName: string }) {
       <section style={styles.preview}>
         <h2 style={styles.previewHeading}>Превью</h2>
         {imageUrl ? (
-          <img src={apiUrl(imageUrl)} alt="Сгенерированный баннер" style={styles.previewImg} />
+          <img src={generatedAssetUrl(imageUrl)} alt="Сгенерированный баннер" style={styles.previewImg} />
         ) : (
           <div style={styles.previewPlaceholder}>{loading ? 'Генерируем…' : 'Здесь появится баннер'}</div>
         )}
