@@ -61,3 +61,36 @@ export function isRequestOriginAllowed(origin: string | undefined): boolean {
 
   return false;
 }
+
+/** Для отладки CORS на проде (без секретов): какие проверки сработали. */
+export function getCorsDebugInfo(origin: string | undefined): {
+  originReceived: string | null;
+  allowed: boolean;
+  matchedStatic: boolean;
+  matchedVercelHttps: boolean;
+  matchedDevLocal: boolean;
+  nodeEnv: string | undefined;
+} {
+  if (typeof origin !== 'string' || origin.trim().length === 0) {
+    return {
+      originReceived: null,
+      allowed: false,
+      matchedStatic: false,
+      matchedVercelHttps: false,
+      matchedDevLocal: false,
+      nodeEnv: process.env.NODE_ENV,
+    };
+  }
+  const o = origin.trim();
+  const matchedStatic = STATIC_ALLOWED_ORIGINS.has(o);
+  const matchedVercelHttps = isHttpsVercelAppOrigin(o);
+  const matchedDevLocal = process.env.NODE_ENV !== 'production' && isLocalOrigin(o);
+  return {
+    originReceived: o,
+    allowed: isRequestOriginAllowed(origin),
+    matchedStatic,
+    matchedVercelHttps,
+    matchedDevLocal,
+    nodeEnv: process.env.NODE_ENV,
+  };
+}
