@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://ads-assist-api.vercel.app/api/:path*"
+    },
+    {
+      "source": "/generated/:path*",
+      "destination": "https://ads-assist-api.vercel.app/generated/:path*"
+    }
+  ]
+}
