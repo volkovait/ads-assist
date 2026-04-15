@@ -5,3 +5,5 @@ dist/
 .DS_Store
 server/generated/*
 !server/generated/.gitkeep
+public/*
+!public/.gitkeep

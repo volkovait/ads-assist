@@ -1,4 +1,5 @@
 import './loadEnv.js';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import cors from 'cors';
 import type { CorsOptions } from 'cors';
@@ -10,7 +11,9 @@ import { createBannerRouter } from './routes/banner.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const GENERATED_DIR = path.resolve(__dirname, '../generated');
-const CLIENT_DIST = path.resolve(__dirname, '../../client/dist');
+/** Сборка: client/dist копируется в корневой `public/` (Vercel отдаёт его с CDN; express.static на Vercel не используется). */
+const REPO_PUBLIC_DIR = path.resolve(__dirname, '../../public');
+const CLIENT_DIST_FALLBACK = path.resolve(__dirname, '../../client/dist');
 
 const app = express();
 const port = Number(process.env.PORT) || 3001;
@@ -35,15 +38,21 @@ app.use('/api', createBannerRouter(GENERATED_DIR));
 const isProd = process.env.NODE_ENV === 'production';
 
 if (isProd) {
-  app.use(express.static(CLIENT_DIST));
+  const spaDir = existsSync(path.join(REPO_PUBLIC_DIR, 'index.html')) ? REPO_PUBLIC_DIR : CLIENT_DIST_FALLBACK;
+  app.use(express.static(spaDir));
   app.get(/^(?!\/api\/|\/generated\/).*/, (_req, res) => {
-    res.sendFile(path.join(CLIENT_DIST, 'index.html'));
+    res.sendFile(path.join(spaDir, 'index.html'));
   });
 }
 
-app.listen(port, () => {
-  console.log(`Server listening on http://127.0.0.1:${port}`);
-  if (isProd) {
-    console.log(`Serving client from ${CLIENT_DIST}`);
-  }
-});
+if (!process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`Server listening on http://127.0.0.1:${port}`);
+    if (isProd) {
+      const dir = existsSync(path.join(REPO_PUBLIC_DIR, 'index.html')) ? REPO_PUBLIC_DIR : CLIENT_DIST_FALLBACK;
+      console.log(`Serving client from ${dir}`);
+    }
+  });
+}
+
+export default app;
