@@ -14,7 +14,7 @@ const app = express();
 const port = Number(process.env.PORT) || 3001;
 
 const corsOptions = {
-  origin: '*.vercel.app', // Разрешаем запросы только с доменов, оканчивающихся на .vercel.app
+  origin: '*.vercel.com', // Разрешаем запросы только с доменов, оканчивающихся на .vercel.app
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Разрешённые HTTP-методы
   credentials: true, // Разрешаем отправку cookies и авторизационных заголовков
 };
