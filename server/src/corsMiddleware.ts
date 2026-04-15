@@ -77,14 +77,13 @@ export function corsMiddleware(req: Request, res: Response, next: NextFunction):
     res.status(200).end();
     return;
   }
-
-  if (allowed && origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.append('Vary', 'Origin');
-  } else if (isPublicGeneratedPath(req)) {
+if (isPublicGeneratedPath(req)) {
     res.setHeader('Access-Control-Allow-Origin', '*');
   }
+
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.append('Vary', 'Origin');
 
   attachCorsDebugHeaders(res, debugInfo, {
     Phase: req.method,
