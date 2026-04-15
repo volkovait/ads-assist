@@ -13,6 +13,13 @@ const ALLOW_METHODS = 'GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS';
 const FALLBACK_ALLOW_HEADERS = 'Content-Type, Authorization, Accept, RqUID, X-Client-ID';
 const MAX_AGE = '86400';
 
+/** Статические JPG превью: кросс-домен с фронта без Origin или с crossOrigin — нужен ACAO (часто `*`, без credentials). */
+function isPublicGeneratedPath(req: Request): boolean {
+  if (req.path.startsWith('/generated/') || req.path === '/generated') return true;
+  const base = (req.originalUrl ?? '').split('?')[0] ?? '';
+  return base.startsWith('/generated/') || base === '/generated';
+}
+
 export function corsMiddleware(req: Request, res: Response, next: NextFunction): void {
   const originHeader = req.headers.origin;
   const origin = typeof originHeader === 'string' ? originHeader : undefined;
@@ -35,6 +42,8 @@ export function corsMiddleware(req: Request, res: Response, next: NextFunction):
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.append('Vary', 'Origin');
+    } else if (isPublicGeneratedPath(req)) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
     }
 
     res.status(200).end();
@@ -45,6 +54,8 @@ export function corsMiddleware(req: Request, res: Response, next: NextFunction):
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.append('Vary', 'Origin');
+  } else if (isPublicGeneratedPath(req)) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
 
   next();
