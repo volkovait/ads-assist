@@ -1,5 +1,3 @@
-import type { CorsOptions } from 'cors';
-
 /** Продакшен-фронт на Vercel (разрешён по умолчанию). */
 export const PRODUCTION_CLIENT_ORIGIN = 'https://ads-assist-client.vercel.app';
 
@@ -18,6 +16,13 @@ function parseCorsOriginsEnv(): string[] {
   return raw.split(',').map(s => s.trim()).filter(Boolean);
 }
 
+const EXTRA_ORIGINS = parseCorsOriginsEnv();
+const STATIC_ALLOWED_ORIGINS = new Set<string>([
+  PRODUCTION_CLIENT_ORIGIN,
+  ...DEV_DEFAULT_ORIGINS,
+  ...EXTRA_ORIGINS,
+]);
+
 /** Локальная разработка: localhost / 127.0.0.1 с любым портом, http и https. */
 function isLocalOrigin(origin: string): boolean {
   try {
@@ -30,8 +35,8 @@ function isLocalOrigin(origin: string): boolean {
 }
 
 /**
- * Деплои и превью на Vercel приходят с Origin вида https://*-....vercel.app,
- * а не только с канонического домена проекта — без этого браузер режет CORS.
+ * Деплои и превью на Vercel: Origin вида https://*.vercel.app
+ * (см. https://vercel.com/kb/guide/how-to-enable-cors — префлайт и явный origin).
  */
 function isHttpsVercelAppOrigin(origin: string): boolean {
   try {
@@ -44,34 +49,15 @@ function isHttpsVercelAppOrigin(origin: string): boolean {
   }
 }
 
-export function createCorsOptions(): CorsOptions {
-  const extra = parseCorsOriginsEnv();
-  const allowed = new Set<string>([PRODUCTION_CLIENT_ORIGIN, ...DEV_DEFAULT_ORIGINS, ...extra]);
+/** Разрешён ли Origin для CORS (с credentials нужен конкретный origin, не `*`). */
+export function isRequestOriginAllowed(origin: string | undefined): boolean {
+  if (typeof origin !== 'string' || origin.trim().length === 0) return false;
 
-  return {
-    origin(origin, callback) {
-      if (!origin) {
-        callback(null, true);
-        return;
-      }
-      if (allowed.has(origin)) {
-        callback(null, true);
-        return;
-      }
-      if (isHttpsVercelAppOrigin(origin)) {
-        callback(null, true);
-        return;
-      }
-      const dev = process.env.NODE_ENV !== 'production';
-      if (dev && isLocalOrigin(origin)) {
-        callback(null, true);
-        return;
-      }
-      callback(null, false);
-    },
-    methods: ['GET', 'HEAD', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'RqUID', 'X-Client-ID'],
-    maxAge: 86_400,
-    optionsSuccessStatus: 204,
-  };
+  if (STATIC_ALLOWED_ORIGINS.has(origin)) return true;
+  if (isHttpsVercelAppOrigin(origin)) return true;
+
+  const dev = process.env.NODE_ENV !== 'production';
+  if (dev && isLocalOrigin(origin)) return true;
+
+  return false;
 }

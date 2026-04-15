@@ -110,7 +110,8 @@ banner-practise/
 │   │   ├── telegram.ts     # sendPhoto, sendMessage
 │   │   ├── routes/banner.ts# /api/copy/chat, /api/banner/generate
 │   │   ├── loadEnv.ts      # загрузка .env из корня монорепо
-│   │   ├── corsConfig.ts   # CORS: Vercel-фронт + localhost в dev
+│   │   ├── corsConfig.ts   # правила разрешённых Origin
+│   │   ├── corsMiddleware.ts # CORS-заголовки по KB Vercel (OPTIONS 200 + credentials)
 │   │   └── index.ts        # Express, статика, SPA в production
 │   └── generated/          # сохранённые JPG (не коммитить содержимое)
 ├── example/                # референс NestJS + другой провайдер (исторический)
