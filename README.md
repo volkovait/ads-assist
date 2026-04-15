@@ -70,7 +70,7 @@
 | `PORT` | Порт Express (по умолчанию `3001`). |
 | `TELEGRAM_BOT_TOKEN` | Токен бота. |
 | `TELEGRAM_CHAT_ID` | ID чата для отправки результатов. |
-| `CORS_ORIGINS` | Необязательно: дополнительные разрешённые origin для CORS (через запятую). По умолчанию уже разрешены прод-фронт [ads-assist-client.vercel.app](https://ads-assist-client.vercel.app) и типичные `localhost` / `127.0.0.1` для Vite. |
+| `CORS_ORIGINS` | Необязательно: дополнительные разрешённые origin (через запятую), например свой домен `https://app.example.com`. По умолчанию: канонический [ads-assist-client.vercel.app](https://ads-assist-client.vercel.app), любой **`https://*.vercel.app`** (превью-деплои Vercel), типичные порты Vite на localhost. |
 
 ### Клиент (Vite): отдельный хост API
 

@@ -8,6 +8,8 @@ const DEV_DEFAULT_ORIGINS: readonly string[] = [
   'http://127.0.0.1:5173',
   'http://localhost:4173',
   'http://127.0.0.1:4173',
+  'https://localhost:5173',
+  'https://127.0.0.1:5173',
 ] as const;
 
 function parseCorsOriginsEnv(): string[] {
@@ -16,10 +18,27 @@ function parseCorsOriginsEnv(): string[] {
   return raw.split(',').map(s => s.trim()).filter(Boolean);
 }
 
-function isLocalHttpOrigin(origin: string): boolean {
+/** Локальная разработка: localhost / 127.0.0.1 с любым портом, http и https. */
+function isLocalOrigin(origin: string): boolean {
   try {
     const u = new URL(origin);
-    return u.protocol === 'http:' && (u.hostname === 'localhost' || u.hostname === '127.0.0.1');
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+    return u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Деплои и превью на Vercel приходят с Origin вида https://*-....vercel.app,
+ * а не только с канонического домена проекта — без этого браузер режет CORS.
+ */
+function isHttpsVercelAppOrigin(origin: string): boolean {
+  try {
+    const u = new URL(origin);
+    if (u.protocol !== 'https:') return false;
+    const h = u.hostname.toLowerCase();
+    return h === 'vercel.app' || h.endsWith('.vercel.app');
   } catch {
     return false;
   }
@@ -39,12 +58,20 @@ export function createCorsOptions(): CorsOptions {
         callback(null, true);
         return;
       }
+      if (isHttpsVercelAppOrigin(origin)) {
+        callback(null, true);
+        return;
+      }
       const dev = process.env.NODE_ENV !== 'production';
-      if (dev && isLocalHttpOrigin(origin)) {
+      if (dev && isLocalOrigin(origin)) {
         callback(null, true);
         return;
       }
       callback(null, false);
     },
+    methods: ['GET', 'HEAD', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'RqUID', 'X-Client-ID'],
+    maxAge: 86_400,
+    optionsSuccessStatus: 204,
   };
 }
